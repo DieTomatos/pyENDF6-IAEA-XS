@@ -20,17 +20,17 @@ ylabel('Cross-section [barn]')
 show()
 ```
 
-#Additions
+# Additions
  pyENDF6 was implemented to convert Photonuclear XS IAEA data files to txt files that can be uploaded with retrive method of G4Physics vector
 
-#converterAllType.py
+# converterAllType.py
  Converts all types of file from IAEA database to txt format.Additional point with zero value is added to the left boundary of the cross section. Data taken from:
 data/Type* 
 
-#IAEA_combiner/IAEA_combiner.cc
+# IAEA_combiner/IAEA_combiner.cc
  Create elementary cross-section from isotope XS data files from IAEA database. If there is no any isotope data for the element the result is taken from the CHIPS model. The output is placed at IAEA_combiner/combinde_DATA
 
-#RetrievePlotter/RetrievePlotter.cc
+# RetrievePlotter/RetrievePlotter.cc
 Draw the resulted cross-section data from the txt
 
 
