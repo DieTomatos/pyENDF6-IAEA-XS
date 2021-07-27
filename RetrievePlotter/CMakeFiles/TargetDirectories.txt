@@ -1,7 +1,0 @@
-/home/bdk/Software/pyENDF6-master/RetrievePlotter/CMakeFiles/install/strip.dir
-/home/bdk/Software/pyENDF6-master/RetrievePlotter/CMakeFiles/install/local.dir
-/home/bdk/Software/pyENDF6-master/RetrievePlotter/CMakeFiles/install.dir
-/home/bdk/Software/pyENDF6-master/RetrievePlotter/CMakeFiles/list_install_components.dir
-/home/bdk/Software/pyENDF6-master/RetrievePlotter/CMakeFiles/rebuild_cache.dir
-/home/bdk/Software/pyENDF6-master/RetrievePlotter/CMakeFiles/edit_cache.dir
-/home/bdk/Software/pyENDF6-master/RetrievePlotter/CMakeFiles/RetrievePlotter.dir
