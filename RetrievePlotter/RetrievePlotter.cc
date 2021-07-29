@@ -125,12 +125,15 @@ int main(int argc, char** argv)//int argc, char** argv)
   G4cout << "=======================================================" << G4endl;
 
   // ------- Initialisation
-  G4int verboseLevel = 0;
+  G4int verboseLevel = 1;
   std::ostringstream ost;
   G4int Z=atoi(argv[1]),A=atoi(argv[2]);
   G4String atomName=argv[3];
-  if(A != 0) ost << "../data/output/inel"<< Z << "_" << A;			    
-  else ost << "../IAEA_combiner/combined_Data/inel"<< Z;
+  if(atomName == "neutron") ost << "../IAEA_combiner/combined_Data/inel0_neutron";
+  else{
+    if(A != 0) ost << "../data/output/inel"<< Z << "_" << A;			    
+    else ost << "../IAEA_combiner/combined_Data/inel"<< Z;
+  }
   G4PhysicsVector* v = nullptr;
   std::ifstream filein(ost.str().c_str());
   if (!(filein)) {
@@ -158,9 +161,9 @@ int main(int argc, char** argv)//int argc, char** argv)
   if(A!=0) ostname << "test/gamma_"<<atomName<<"_"<<"IAEA"<<"_"<<Z<<"_"<<A;
   else ostname << "test/gamma_"<<atomName<<"_"<<"IAEA"<<"_"<<Z;
   hname = ostname.str();
-  const G4int nbins = 481;
+  const G4int nbins = 48001;
   G4double lxmin = 0*MeV;
-  G4double lxmax = 200*MeV;
+  G4double lxmax = 100000*MeV;
   G4double dlx = (lxmax - lxmin)/G4double(nbins-1);
 
   histo.Add1D("0","Inelastic",nbins,lxmin-dlx*0.5,lxmax+dlx*0.5);
