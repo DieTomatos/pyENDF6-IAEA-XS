@@ -165,7 +165,7 @@ void vectorUntilBound(G4PhysicsVector* v ,std::vector <G4double>& cs, std::vecto
 }
 
 
-void transitionRegion(std::vector <G4double>& cs, std::vector <G4double>& e, const G4double lTransitionBound,const G4double rTransitionBound, G4int Z, const G4double ChipsGGtransitionBound){
+void transitionRegionCHIPS(std::vector <G4double>& cs, std::vector <G4double>& e, const G4double lTransitionBound,const G4double rTransitionBound, G4int Z, const G4double ChipsGGtransitionBound){
   G4ThreeVector aDirection = G4ThreeVector(0.0,0.0,1.0);
   G4DynamicParticle dParticle(G4Gamma::Gamma(),aDirection,rTransitionBound);
   G4VCrossSectionDataSet* ggXsection = new G4PhotoNuclearCrossSection();
@@ -187,7 +187,17 @@ void transitionRegion(std::vector <G4double>& cs, std::vector <G4double>& e, con
   }
   
 }
-
+void writeFile(std::vector <G4double>& cs, std::vector <G4double>& e,std::ostringstream& outname){
+  std::ofstream fileout;
+  G4int esize = e.size();
+  fileout.open(outname.str().c_str());       
+  fileout<< e[0]<<" "<< e.back()<<" "<<esize<<"\n";
+  fileout << esize<<"\n";
+  for(G4int i = 0; i<esize; i++) fileout<<e[i]<<" "<<cs[i]<<"\n";
+   
+  fileout.close();
+	   
+  }
 
 int main()//int argc, char** argv)
 {
@@ -235,10 +245,10 @@ int main()//int argc, char** argv)
     totalAbundancy = 0.;
     G4int Aonly = 0;
     G4double isoAbund;
-    G4double Hstep = 0.5;
+    G4double Hstep = 0.1;
     G4int  npoints;
     G4double step = stepEval(ZA,Z);
-    if(Z==1) npoints = round(ChipsGGtransitionBound/Hstep)+1;
+    if(Z==1) npoints = round((ChipsGGtransitionBound-140.*MeV)/Hstep)+1;
     else{
     if(step<(0.001*MeV)) step = 0.001*MeV;
     npoints = round(lTransitionBound/step)+1;
@@ -279,24 +289,15 @@ int main()//int argc, char** argv)
 
       totalAbundancy+=isoAbund;
       for(G4int i=0;i<npoints; i++ ){
-	cs[i] = (v->Value(i*step*MeV)*builder->GetIsotopeAbundance(itr->first,itr->second));
+	cs[i] += (v->Value(i*step*MeV)*builder->GetIsotopeAbundance(itr->first,itr->second));
 	e[i] = (i*step);
       }
 
     }
     }
 
+ 
     
- std::ofstream fileout;
- outname.clear();
- outname.str("");
- outname << "combined_Data/inel"<< Z;
-
- //TODO All cases add data to cs and e vectors
-
- 
- 
- //TODO Implement transition region between gdr and CHIPS
  auto itr= ZA.find(Z);
  itr++; 
  if(Z!=itr->first && totalAbundancy >= tAbundTreshold ) {// The case when for the element we have only one isotop file at the database
@@ -306,7 +307,6 @@ int main()//int argc, char** argv)
    v->Retrieve(filein, true);
    filein.close();
    vectorUntilBound(v, cs, e, lTransitionBound);
-   //std::experimental::filesystem::copy(inname.str().c_str(),outname.str().c_str(), std::experimental::filesystem::copy_options::overwrite_existing);
  }
  else if(Aonly!=0){ // Aonly is the case when one isotope have Abundancy > 1-tAbundTreshold 
    inname.clear();
@@ -318,21 +318,26 @@ int main()//int argc, char** argv)
    v->Retrieve(filein, true);
    filein.close();
    vectorUntilBound(v, cs, e, lTransitionBound);
-   //std::experimental::filesystem::copy(inname.str().c_str(),outname.str().c_str(), std::experimental::filesystem::copy_options::overwrite_existing);
+
  }
-  else if(Z==1 && totalAbundancy < tAbundTreshold){ // The proton case
-    //bdkq// For CHIPS linear parametrisation used with 0.5 step
+  else if(Z==1 && totalAbundancy < tAbundTreshold){ // The proton case // Hstep = 0.1 MeV
     inel = new G4PhotoNuclearCrossSection();
     G4ThreeVector aDirection = G4ThreeVector(0.0,0.0,1.0);
     G4DynamicParticle dParticle(G4Gamma::Gamma(),aDirection,0);
-    for(G4int i=0;i<npoints; i++ ){  
-      dParticle.SetKineticEnergy(i*Hstep);
-      e[i]=i*Hstep;
+    for(G4int i=0.;i<npoints; i++ ){  
+      dParticle.SetKineticEnergy(140.*MeV+i*Hstep);
+      e[i]=140.*MeV+i*Hstep;
       cs[i]=inel->GetElementCrossSection(&dParticle,Z,0);
+      }
+    G4double GGstep = 5.*MeV;
+    for(G4double ei=ChipsGGtransitionBound;ei<100000. *MeV; ei+=GGstep ){  
+      dParticle.SetKineticEnergy(ei);
+      e.push_back(ei);
+      cs.push_back(inel->GetElementCrossSection(&dParticle,Z,0));
       }
       }
  else if(totalAbundancy < tAbundTreshold){ // The case if we dont have sufficient isotope data  
- //TODO Implement CHIPS model if there is no IAEA data
+ //DONE Implement CHIPS model if there is no IAEA data
     //bdkq// For CHIPS linear parametrisation used with 0.5 step
     inel = new G4PhotoNuclearCrossSection();
     G4ThreeVector aDirection = G4ThreeVector(0.0,0.0,1.0);
@@ -349,22 +354,80 @@ int main()//int argc, char** argv)
       }
  }
  
- if(Z!=1) transitionRegion(cs, e, lTransitionBound,rTransitionBound,Z,ChipsGGtransitionBound);
+ if(Z!=1) transitionRegionCHIPS(cs, e, lTransitionBound,rTransitionBound,Z,ChipsGGtransitionBound);
 
- G4int esize = e.size();
- fileout.open(outname.str().c_str());       
- fileout<< e[0]<<" "<< e.back()<<" "<<esize<<"\n";
- fileout << esize<<"\n";
- for(G4int i = 0; i<esize; i++) fileout<<e[i]<<" "<<cs[i]<<"\n";
-   
- fileout.close();
+ outname.clear();
+ outname.str("");
+ outname << "combined_Data/inel"<< Z;
+
+ writeFile(cs ,e , outname);
+  }
  
+ 
+//Next block is relevant to add transition region and CHIPS data to all isotopes
+for (auto itr = ZA.begin(); itr != ZA.end(); itr++){
+  std::vector <G4double> cs;
+  std::vector <G4double> e;
+  inname.clear();
+  inname.str("");
+  inname << path<<"inel"<< itr -> first << "_" << itr -> second;
+  std::ifstream filein;
+  filein.open(inname.str().c_str());
+       
+  if (!(filein)) {
+   G4ExceptionDescription ed;
+   ed << "Data file <" << inname.str().c_str()
+      << "> is not opened!";
+     } else {
+       if(verboseLevel > 0) {
+	 G4cout << "File " << inname.str() 
+	     << " is opened by IAEA_combiner" << G4endl;
+       }
+     }
+  v = new G4PhysicsVector();
+  if(!v->Retrieve(filein, true)) {
+  G4ExceptionDescription ed;
+  ed << "Data file <" << inname.str().c_str()
+     << "> is not retrieved!";
+    }
+  filein.close();
+  vectorUntilBound(v, cs, e, lTransitionBound);
+    
+  outname.clear();
+  outname.str("");
+  outname << "combined_Data/inel"<< itr -> first<<"_"<<itr -> second;
+  transitionRegionCHIPS(cs, e, lTransitionBound ,rTransitionBound ,Z , ChipsGGtransitionBound);
+
+  writeFile(cs ,e , outname);
 	   
   }
-  
+
+//Neutron cross-section evaluation
+ inel = new G4PhotoNuclearCrossSection();
+ G4ThreeVector aDirection = G4ThreeVector(0.0,0.0,1.0);
+ G4DynamicParticle dParticle(G4Gamma::Gamma(),aDirection,0);
+ G4double Nstep = 0.1;
+ const G4int npoints = round((ChipsGGtransitionBound-144.7*MeV)/Nstep)+1;
+ std::vector <G4double> cs;
+ std::vector <G4double> e;
  
-  //const G4Element* el = G4NistManager::Instance()->FindOrBuildMaterial("G4_"+atomName);
-
-  
-
+ e.push_back(144.6*MeV);
+ cs.push_back(0.);
+ 
+ for(G4int i=0.;i<npoints; i++ ){  
+     dParticle.SetKineticEnergy(144.7*MeV+i*Nstep);
+     e.push_back(144.7*MeV+i*Nstep);
+     cs.push_back(inel->GetIsoCrossSection(&dParticle,1,2)-inel->GetElementCrossSection(&dParticle,1,0));
+     }
+  G4double GGstep = 5.*MeV;
+  for(G4double ei=ChipsGGtransitionBound;ei<100000. *MeV; ei+=GGstep ){  
+     dParticle.SetKineticEnergy(ei);
+     e.push_back(ei);
+     cs.push_back(inel->GetIsoCrossSection(&dParticle,1,2)-inel->GetElementCrossSection(&dParticle,1,0));
+     }
+ outname.clear();
+ outname.str("");
+ outname << "combined_Data/inel0_neutron";
+ writeFile(cs ,e , outname);	    
+ 
 }
