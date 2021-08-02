@@ -1,9 +1,7 @@
 # pyENDF6
 
 This python module provides a minimal set of function for reading tabulated data from ENDF nuclear data files (see
-https://www-nds.iaea.org/public/endf/).
-
-*Note: I won't further develop this script, since I'm not working with ENDF files anymore.*
+https://www-nds.iaea.org/public/endf/)
 
 #### Example
 ```python
