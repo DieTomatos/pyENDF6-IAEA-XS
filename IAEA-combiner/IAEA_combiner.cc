@@ -219,11 +219,11 @@ void transitionRegionISOCHIPS(std::vector <G4double>& cs, std::vector <G4double>
   
 }
 
-void clearZero(std::vector <G4double>& cs, std::vector <G4double>& e){
+void clearZero(std::vector <G4double>& cs, std::vector <G4double>& e, G4int isIsotope){
 
   G4double eraseNum = std::distance(cs.begin(), std::find_if(cs.begin(),cs.end(), [](G4double x) { return x != 0; }));
-  cs.erase(cs.begin(),cs.begin()+eraseNum);
-  e.erase(e.begin(),e.begin()+eraseNum);
+  cs.erase(cs.begin(),cs.begin()+eraseNum-isIsotope);
+  e.erase(e.begin(),e.begin()+eraseNum-isIsotope);
   }
 
 void writeFile(std::vector <G4double>& cs, std::vector <G4double>& e, std::ostringstream& outname){
@@ -357,6 +357,7 @@ int main()//int argc, char** argv)
    G4cout<<Z<<" step = "<<step<<G4endl;
    }*/
  if(Aonly!=0){ // Aonly is the case when one isotope with hig habundancy Abund > 1-tAbundTreshold taken as element cross-section with non linear parametrisation due to narrow resonances
+   //G4NistManager::Instance()->PrintElement(Z);
    inname.clear();
    inname.str("");
    inname << path<<"inel"<< Z << "_" << Aonly;
@@ -403,7 +404,8 @@ int main()//int argc, char** argv)
  else if(totalAbundancy < tAbundTreshold){ // The case if we dont have sufficient isotope data  
  //DONE Implement CHIPS model if there is no IAEA data
     //bdkq// For CHIPS linear parametrisation used with 0.5 step
-    inel = new G4PhotoNuclearCrossSection();
+   //G4NistManager::Instance()->PrintElement(Z);
+   inel = new G4PhotoNuclearCrossSection();
     G4ThreeVector aDirection = G4ThreeVector(0.0,0.0,1.0);
     G4DynamicParticle dParticle(G4Gamma::Gamma(),aDirection,0);
      for(G4int i=0;i<npoints; i++ ){  
@@ -411,6 +413,7 @@ int main()//int argc, char** argv)
       e[i]=i*step;
       cs[i]=inel->GetElementCrossSection(&dParticle,Z,0);
       }
+
      CHIPSwrite=CHIPSwrite - 1;
  }
  else {// Case when we have isotope data with total abundancy more than tAbunanceTreshold presented at IAEA data library
@@ -425,7 +428,7 @@ int main()//int argc, char** argv)
  outname.clear();
  outname.str("");
  outname << "combined_Data/inel"<< Z;
- clearZero(cs, e);
+ clearZero(cs, e, 0);
  if(Z == 1 && ChipsGGtransitionBound<144.5*MeV){
    cs.clear();
    e.clear();
@@ -481,7 +484,7 @@ for (auto itr = ZA.begin(); itr != ZA.end(); itr++){
   auto ditr = itr;
   upitr++;
   ditr--;
-  clearZero(cs,e);
+  clearZero(cs,e, 1);
   if(ditr->first == itr->first || upitr->first == itr->first) writeFile(cs , e , outname);  // No need to save isotope data if it is already saved as cross-section on element
   if(itr->first == 1 && itr->second == 2) writeFile(cs , e , outname);// H-2
   if(itr->first == 2 && itr->second == 3) writeFile(cs , e , outname);// He-3
@@ -500,7 +503,7 @@ for (auto itr = ZA.begin(); itr != ZA.end(); itr++){
      e.push_back(G4Exp(lei));
      cs.push_back(inel->GetIsoCrossSection(&dParticle,1,2));
     }
- clearZero(cs, e);
+ clearZero(cs, e, 1);
  writeFile(cs , e , outname);// deutron
   }
   
@@ -527,7 +530,7 @@ for (auto itr = ZA.begin(); itr != ZA.end(); itr++){
  outname.clear();
  outname.str("");
  outname << "combined_Data/inel"<< 1 <<"_" << 3;
- clearZero(cs, e);
+ clearZero(cs, e, 1);
  writeFile(cs , e , outname);
  }
 
